@@ -9,7 +9,7 @@ Alias /cobbler_webui_content <%= @default_webroot -%>_webui_content
 
 WSGIScriptAliasMatch ^/cblr/svc/([^/]*) <%= @default_webroot -%>/svc/services.py
 
-<Directory "<%= @default_webroot -%>">
+<Directory "<%= @default_webroot %>">
     Options Indexes FollowSymLinks
     Order allow,deny
     Allow from all
