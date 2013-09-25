@@ -109,7 +109,9 @@ class cobbler (
 ) inherits cobbler::params {
 
   # require apache modules
-  require ::apache
+  unless defined(Class[::apache]) {
+    require ::apache
+  }
   require ::apache::mod::wsgi
   require ::apache::mod::proxy
   require ::apache::mod::proxy_http
