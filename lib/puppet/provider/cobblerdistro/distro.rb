@@ -29,7 +29,8 @@ Puppet::Type.type(:cobblerdistro).provide(:distro) do
         :initrd         => member['initrd'],
         :ks_meta        => member['ks_meta'],
         :comment        => member['comment'],
-        :breed          => member['breed']
+        :breed          => member['breed'],
+        :os_version     => member['os_version']
       )
     end
     keys
@@ -93,6 +94,12 @@ Puppet::Type.type(:cobblerdistro).provide(:distro) do
     cobbler('distro', 'edit', '--name=' + @resource[:name], '--breed=' + value)
     @property_hash[:breed]=(value)
   end
+ 
+  # Support cobbler's --os-version
+  def os_version=(value)
+    cobbler('distro', 'edit', '--name=' + @resource[:name], '--os-version=' + value)
+    @property_hash[:os_version]=(value)
+  end
 
   # comment
   def comment=(value)
@@ -108,12 +115,9 @@ Puppet::Type.type(:cobblerdistro).provide(:distro) do
 
       # if ks_meta tree is defined, get the value
       # and use it for '--available-as' option
-      if @resource[:ks_meta].has_key?('tree')
-        ks_meta_tree = @resource[:ks_meta]['tree']
-        cobblerargs = 'import --name=' + @resource[:name] + ' --path=' + @resource[:path] + ' --available-as=' + ks_meta_tree
-      else
-        cobblerargs = 'import --name=' + @resource[:name] + ' --path=' + @resource[:path] 
-      end
+      ks_meta = if @resource[:ks_meta].has_key?('tree') then ' --available-as=' + @resource[:ks_meta]['tree'] else '' end
+
+      cobblerargs = 'import --name=' + @resource[:name] + ' --path=' + @resource[:path] + ks_meta
     else
       # This is block that does:
       #  'cobbler distro add'
@@ -132,7 +136,7 @@ Puppet::Type.type(:cobblerdistro).provide(:distro) do
       if ! File.directory? isopath
         Dir.mkdir(isopath, 755)
       end
-      mount( '-o', 'loop', isopath + '.iso', isopath)
+      mount( '-o', 'loop', isopath + '.iso', isopath) unless mount( '-l', '-t', 'iso9660') =~ /#{isopath}/
 
       # real work to be done here
       currentdir = Dir.pwd
@@ -161,7 +165,6 @@ Puppet::Type.type(:cobblerdistro).provide(:distro) do
     # add properties
     self.arch    = @resource.should(:arch)    unless self.arch    == @resource.should(:arch)
     self.comment = @resource.should(:comment) unless self.comment == @resource.should(:comment)
-    self.breed   = @resource.should(:breed)   unless self.breed   == @resource.should(:breed)
 
     # final sync
     cobbler('sync')
