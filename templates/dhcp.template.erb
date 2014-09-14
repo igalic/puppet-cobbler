@@ -18,18 +18,15 @@ allow bootp;
 ignore client-updates;
 set vendorclass = option vendor-class-identifier;
 
-<% unless @dhcp_interfaces == '' or @dhcp_interfaces.nil? -%>
-<% @dhcp_interfaces.each do |iface| -%>
+<% Array(@dhcp_interfaces).each do |iface| -%>
 subnet <%= instance_variable_get("@ipaddress_#{iface}").match(/\d+\.\d+\.\d+/) %>.0 netmask 255.255.255.0 {
     option domain-name          "<%= @domain %>";
     option subnet-mask          255.255.255.0;
     option domain-name-servers  <%=
-if @nameservers.kind_of?(Array)
-   @nameservers.join(", ")
-elsif (@nameservers.kind_of?(String) && @nameservers != '' )
-   @nameservers
+if @nameservers.nil? or @nameservers.empty?
+   "127.0.0.1"
 else
-   puts("127.0.0.1")
+   @nameservers.join(", ")
 end %>;
     option routers              <%= instance_variable_get("@ipaddress_#{iface}").match(/\d+\.\d+\.\d+/) %>.1;
     filename                    "/pxelinux.0";<% if @dhcp_dynamic_range == 1 then %>
@@ -39,20 +36,16 @@ end %>;
     next-server                 $next_server;
 }
 <% end -%>
-<% end -%>
-<% unless @dhcp_subnets == '' or @dhcp_subnets.nil? -%>
-<% @dhcp_subnets.each do |dhcp_subnet| -%>
+<% Array(@dhcp_subnets).each do |dhcp_subnet| -%>
 <% dhcp_subnet_split   = dhcp_subnet.split('/') -%>
 subnet <%= dhcp_subnet_split[0] %> netmask <%= dhcp_subnet_split[1] %> {
     option domain-name          "<%= @domain %>";
     option subnet-mask          <%= dhcp_subnet_split[1]%>;
     option domain-name-servers  <%=
-if @nameservers.kind_of?(Array)
-   @nameservers.join(", ")
-elsif (@nameservers.kind_of?(String) && @nameservers != '' )
-   @nameservers
+if @nameservers.nil? or @nameservers.empty?
+   "127.0.0.1"
 else
-   puts("127.0.0.1")
+   @nameservers.join(", ")
 end %>;
     option routers              <%= dhcp_subnet_split[0].match(/\d+\.\d+\.\d+/) %>.<%= dhcp_subnet_split[0].sub(/\d+\.\d+\.\d+\./, '').to_i + 1 %>;
     filename                    "/pxelinux.0";
@@ -60,7 +53,6 @@ end %>;
     max-lease-time              43200;
     next-server                 $next_server;
 }
-<% end -%>
 <% end -%>
 
 #for dhcp_tag in $dhcp_tags.keys():
